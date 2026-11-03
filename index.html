@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Kết Quả Học Tập THCS</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; color: #333; }
+        h2 { color: #0056b3; text-align: center; }
+        .search-container { margin: 20px auto; display: flex; gap: 10px; max-width: 500px; }
+        #searchInput { flex: 1; padding: 10px 15px; font-size: 15px; border: 2px solid #007bff; border-radius: 4px; outline: none; }
+        .search-container button { padding: 10px 20px; font-size: 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .search-container button:hover { background-color: #0056b3; }
+        .table-responsive { overflow-x: auto; margin-top: 20px; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.05); border-radius: 8px; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 1200px; }
+        th, td { border: 1px solid #dee2e6; text-align: center; padding: 10px 6px; }
+        th { background-color: #007bff; color: white; font-weight: bold; white-space: nowrap; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .status-msg { text-align: center; font-size: 15px; margin-top: 20px; font-weight: bold; }
+        .error { color: #dc3545; }
+        .loading { color: #007bff; }
+    </style>
+</head>
+<body>
+
+    <h2>🔍 HỆ THỐNG TRA CỨU ĐIỂM HỌC SINH</h2>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" onkeydown="if(event.key === 'Enter') performSearch()" placeholder="Nhập chính xác mã định danh để xem điểm...">
+        <button onclick="performSearch()">Tìm kiếm</button>
+    </div>
+
+    <div class="table-responsive" id="output"></div>
+
+    <script>
+        // ĐIỀN ĐƯỜNG LINK URL GOOGLE APPS SCRIPT BẠN COPY Ở BƯỚC 2 VÀO ĐÂY:
+        const SCRIPT_URL = "DÁN_LINK_WEB_APP_CỦA_BẠN_VÀO_ĐÂY";
+
+        function performSearch() {
+            const searchTerm = document.getElementById("searchInput").value.trim();
+            const outputDiv = document.getElementById("output");
+
+            if (searchTerm === "") {
+                outputDiv.innerHTML = "<p class='status-msg error'>Vui lòng nhập mã định danh để tìm kiếm.</p>";
+                return;
+            }
+
+            outputDiv.innerHTML = "<p class='status-msg loading'>⏳ Đang kết nối dữ liệu, vui lòng đợi giây lát...</p>";
+
+            // Gửi yêu cầu bảo mật lên Google Sheets
+            fetch(`${SCRIPT_URL}?id=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let tableHTML = "<table><tr>";
+                        
+                        // Render Tiêu đề (Tự động bẻ dòng nếu tiêu đề dài)
+                        data.headers.forEach(header => {
+                            tableHTML += `<th>${header.toString().replace(/\n/g, "<br>")}</th>`;
+                        });
+                        tableHTML += "</tr><tr>";
+
+                        // Render Điểm số học sinh
+                        data.studentData.forEach(cell => {
+                            tableHTML += `<td>${cell !== undefined && cell !== null ? cell : ""}</td>`;
+                        });
+                        tableHTML += "</tr></table>";
+                        
+                        outputDiv.innerHTML = tableHTML;
+                    } else {
+                        outputDiv.innerHTML = `<p class='status-msg error'>❌ Không tìm thấy mã định danh "${searchTerm}" trong hệ thống.</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Lỗi:", error);
+                    outputDiv.innerHTML = "<p class='status-msg error'>❌ Đã xảy ra lỗi kết nối. Hãy thử lại hoặc liên hệ giáo viên chủ nhiệm.</p>";
+                });
+        }
+    </script>
+</body>
+</html>
